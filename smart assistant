@@ -1,0 +1,709 @@
+import os
+import random
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+
+class SmartPersonalAssistantGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Smart Personal Assistant")
+        self.root.geometry("800x600")
+        
+        self.contacts_file = 'contacts.txt'
+        self.appointments_file = 'AppointmentsList.txt'
+        
+        self.create_login_screen()
+    
+    def clear_frame(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+    
+    def create_login_screen(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Welcome User", font=("Arial", 20)).pack(pady=20)
+        tk.Label(self.root, text="Please enter your password to continue").pack()
+        
+        self.password_entry = tk.Entry(self.root, show="*")
+        self.password_entry.pack(pady=10)
+        
+        tk.Button(self.root, text="Login", command=self.attempt_login).pack(pady=20)
+        
+        self.attempts = 0
+        self.status_label = tk.Label(self.root, text="", fg="red")
+        self.status_label.pack()
+    
+    def attempt_login(self):
+        password = self.password_entry.get()
+        if password == "HDSC":
+            self.create_main_menu()
+        else:
+            self.attempts += 1
+            if self.attempts >= 3:
+                self.status_label.config(text="Too many attempts. System locked")
+                self.password_entry.config(state='disabled')
+                tk.Button(self.root, text="Exit", command=self.root.destroy).pack(pady=20)
+            else:
+                self.status_label.config(text=f"Wrong password, Try again. Attempts: {self.attempts}/3")
+    
+    def create_main_menu(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Personalised Smart Assistant", font=("Arial", 20)).pack(pady=20)
+        
+        menu_frame = tk.Frame(self.root)
+        menu_frame.pack(pady=20)
+        
+        options = [
+            "1: Contacts Menu",
+            "2: Meetings Menu",
+            "3: Sort Contacts",
+            "4: Sort Meetings",
+            "5: View Contacts",
+            "6: View Appointments",
+            "7: Search Record"
+        ]
+        
+        for i, option in enumerate(options, start=1):
+            tk.Button(menu_frame, text=option, width=20, 
+                      command=lambda i=i: self.handle_main_menu(i)).pack(pady=5)
+        
+        tk.Button(self.root, text="Exit", command=self.root.destroy).pack(pady=20)
+        
+        self.output_text = scrolledtext.ScrolledText(self.root, width=70, height=15)
+        self.output_text.pack(pady=10)
+        self.output_text.config(state='disabled')
+    
+    def handle_main_menu(self, option):
+        if option == 1:
+            self.contacts_menu()
+        elif option == 2:
+            self.meetings_menu()
+        elif option == 3:
+            self.sort_contacts_menu()
+        elif option == 4:
+            self.sort_meetings_menu()
+        elif option == 5:
+            self.show_sorted("Contacts")
+        elif option == 6:
+            self.show_sorted("Appointments")
+        elif option == 7:
+            self.search_record_menu()
+    
+    def contacts_menu(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Contacts Menu", font=("Arial", 16)).pack(pady=10)
+        
+        options = [
+            "1: Add Contact",
+            "2: Edit Contact",
+            "3: Delete Contact",
+            "4: Back to Main Menu"
+        ]
+        
+        for i, option in enumerate(options, start=1):
+            tk.Button(self.root, text=option, width=20, 
+                      command=lambda i=i: self.handle_contacts_menu(i)).pack(pady=5)
+    
+    def handle_contacts_menu(self, option):
+        if option == 1:
+            self.add_record("Contact")
+        elif option == 2:
+            self.update_record("Contact")
+        elif option == 3:
+            self.delete_record("Contact")
+        elif option == 4:
+            self.create_main_menu()
+    
+    def meetings_menu(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Meetings Menu", font=("Arial", 16)).pack(pady=10)
+        
+        options = [
+            "1: Add Meeting",
+            "2: Edit Meeting",
+            "3: Delete Meeting",
+            "4: Back to Main Menu"
+        ]
+        
+        for i, option in enumerate(options, start=1):
+            tk.Button(self.root, text=option, width=20, 
+                      command=lambda i=i: self.handle_meetings_menu(i)).pack(pady=5)
+    
+    def handle_meetings_menu(self, option):
+        if option == 1:
+            self.add_record("Appointment")
+        elif option == 2:
+            self.update_record("Appointment")
+        elif option == 3:
+            self.delete_record("Appointment")
+        elif option == 4:
+            self.create_main_menu()
+    
+    def sort_contacts_menu(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Sort Contacts", font=("Arial", 16)).pack(pady=10)
+        
+        tk.Label(self.root, text="Sort by:").pack()
+        
+        options = [
+            "1: By name",
+            "2: By phone",
+            "3: Back to Main Menu"
+        ]
+        
+        for i, option in enumerate(options, start=1):
+            tk.Button(self.root, text=option, width=20, 
+                      command=lambda i=i: self.handle_sort_contacts(i)).pack(pady=5)
+    
+    def handle_sort_contacts(self, option):
+        if option == 1 or option == 2:
+            self.clear_frame()
+            
+            sort_by = "name" if option == 1 else "phone"
+            
+            tk.Label(self.root, text=f"Sort Contacts by {sort_by}", font=("Arial", 16)).pack(pady=10)
+            tk.Label(self.root, text="Select sort order:").pack()
+            
+            orders = [
+                "1: Ascending",
+                "2: Descending",
+                "3: Random",
+                "4: Back"
+            ]
+            
+            for i, order in enumerate(orders, start=1):
+                tk.Button(self.root, text=order, width=20, 
+                          command=lambda i=i, sort_by=sort_by: self.handle_sort_order(i, "Contacts", sort_by)).pack(pady=5)
+        elif option == 3:
+            self.create_main_menu()
+    
+    def sort_meetings_menu(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Sort Meetings", font=("Arial", 16)).pack(pady=10)
+        
+        tk.Label(self.root, text="Sort by:").pack()
+        
+        options = [
+            "1: By title",
+            "2: By date",
+            "3: Back to Main Menu"
+        ]
+        
+        for i, option in enumerate(options, start=1):
+            tk.Button(self.root, text=option, width=20, 
+                      command=lambda i=i: self.handle_sort_meetings(i)).pack(pady=5)
+    
+    def handle_sort_meetings(self, option):
+        if option == 1 or option == 2:
+            self.clear_frame()
+            
+            sort_by = "title" if option == 1 else "date"
+            
+            tk.Label(self.root, text=f"Sort Meetings by {sort_by}", font=("Arial", 16)).pack(pady=10)
+            tk.Label(self.root, text="Select sort order:").pack()
+            
+            orders = [
+                "1: Ascending",
+                "2: Descending",
+                "3: Random",
+                "4: Back"
+            ]
+            
+            for i, order in enumerate(orders, start=1):
+                tk.Button(self.root, text=order, width=20, 
+                          command=lambda i=i, sort_by=sort_by: self.handle_sort_order(i, "Appointments", sort_by)).pack(pady=5)
+        elif option == 3:
+            self.create_main_menu()
+    
+    def handle_sort_order(self, option, source, sort_by):
+        if option == 1:
+            self.sorting_algorithm(source, "asc", sort_by)
+        elif option == 2:
+            self.sorting_algorithm(source, "desc", sort_by)
+        elif option == 3:
+            self.sorting_algorithm(source, "rand", sort_by)
+        elif option == 4:
+            if source == "Contacts":
+                self.sort_contacts_menu()
+            else:
+                self.sort_meetings_menu()
+    
+    def search_record_menu(self):
+        self.clear_frame()
+        
+        tk.Label(self.root, text="Search Record", font=("Arial", 16)).pack(pady=10)
+        
+        options = [
+            "1: Search Contact",
+            "2: Search Appointment",
+            "3: Back to Main Menu"
+        ]
+        
+        for i, option in enumerate(options, start=1):
+            tk.Button(self.root, text=option, width=20, 
+                      command=lambda i=i: self.handle_search_menu(i)).pack(pady=5)
+    
+    def handle_search_menu(self, option):
+        if option == 1:
+            self.search_record("Contact")
+        elif option == 2:
+            self.search_record("Appointment")
+        elif option == 3:
+            self.create_main_menu()
+    
+    def add_record(self, record_type):
+        self.clear_frame()
+        
+        tk.Label(self.root, text=f"Add {record_type}", font=("Arial", 16)).pack(pady=10)
+        
+        entry_frame = tk.Frame(self.root)
+        entry_frame.pack(pady=10)
+        
+        if record_type == "Contact":
+            tk.Label(entry_frame, text="Name:").grid(row=0, column=0, sticky='e')
+            self.name_entry = tk.Entry(entry_frame)
+            self.name_entry.grid(row=0, column=1)
+            
+            tk.Label(entry_frame, text="Address:").grid(row=1, column=0, sticky='e')
+            self.address_entry = tk.Entry(entry_frame)
+            self.address_entry.grid(row=1, column=1)
+            
+            tk.Label(entry_frame, text="Phone:").grid(row=2, column=0, sticky='e')
+            self.phone_entry = tk.Entry(entry_frame)
+            self.phone_entry.grid(row=2, column=1)
+            
+            tk.Label(entry_frame, text="Email:").grid(row=3, column=0, sticky='e')
+            self.email_entry = tk.Entry(entry_frame)
+            self.email_entry.grid(row=3, column=1)
+        else:
+            tk.Label(entry_frame, text="Title:").grid(row=0, column=0, sticky='e')
+            self.title_entry = tk.Entry(entry_frame)
+            self.title_entry.grid(row=0, column=1)
+            
+            tk.Label(entry_frame, text="Date (dd/mm/yyyy):").grid(row=1, column=0, sticky='e')
+            self.date_entry = tk.Entry(entry_frame)
+            self.date_entry.grid(row=1, column=1)
+            
+            tk.Label(entry_frame, text="Time:").grid(row=2, column=0, sticky='e')
+            self.time_entry = tk.Entry(entry_frame)
+            self.time_entry.grid(row=2, column=1)
+        
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Save", command=lambda: self.save_record(record_type)).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Cancel", command=self.create_main_menu).pack(side='left', padx=5)
+    
+    def save_record(self, record_type):
+        if record_type == "Contact":
+            name = self.name_entry.get()
+            address = self.address_entry.get()
+            phone = self.phone_entry.get()
+            email = self.email_entry.get()
+            
+            if not name or not phone:
+                messagebox.showerror("Error", "Name and phone are required fields")
+                return
+            
+            contact = {'name': name, 'address': address, 'phone': phone, 'email': email}
+            
+            if not os.path.isfile(self.contacts_file):
+                with open(self.contacts_file, 'w') as f:
+                    f.write(f"{contact['name']},{contact['address']},{contact['phone']},{contact['email']}\n")
+            else:
+                with open(self.contacts_file, 'a') as f:
+                    f.write(f"{contact['name']},{contact['address']},{contact['phone']},{contact['email']}\n")
+            
+            messagebox.showinfo("Success", "Contact added successfully")
+        else:
+            title = self.title_entry.get()
+            date = self.date_entry.get()
+            time = self.time_entry.get()
+            
+            if not title or not date:
+                messagebox.showerror("Error", "Title and date are required fields")
+                return
+            
+            appointment = {'title': title, 'date': date, 'time': time}
+            
+            if not os.path.isfile(self.appointments_file):
+                with open(self.appointments_file, 'w') as f:
+                    f.write(f"{appointment['title']},{appointment['date']},{appointment['time']}\n")
+            else:
+                with open(self.appointments_file, 'a') as f:
+                    f.write(f"{appointment['title']},{appointment['date']},{appointment['time']}\n")
+            
+            messagebox.showinfo("Success", "Appointment added successfully")
+        
+        self.create_main_menu()
+    
+    def delete_record(self, record_type):
+        self.clear_frame()
+        
+        tk.Label(self.root, text=f"Delete {record_type}", font=("Arial", 16)).pack(pady=10)
+        
+        if record_type == "Contact":
+            tk.Label(self.root, text="Enter name to delete:").pack()
+            self.search_entry = tk.Entry(self.root)
+            self.search_entry.pack(pady=10)
+        else:
+            tk.Label(self.root, text="Enter title to delete:").pack()
+            self.search_entry = tk.Entry(self.root)
+            self.search_entry.pack(pady=10)
+        
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Delete", command=lambda: self.confirm_delete(record_type)).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Cancel", command=self.create_main_menu).pack(side='left', padx=5)
+    
+    def confirm_delete(self, record_type):
+        search_term = self.search_entry.get()
+        if not search_term:
+            messagebox.showerror("Error", "Please enter a search term")
+            return
+        
+        filename = self.contacts_file if record_type == "Contact" else self.appointments_file
+        
+        try:
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            messagebox.showerror("Error", f"No {record_type.lower()}s found")
+            return
+        
+        updated_lines = []
+        deleted = False
+        
+        for line in lines:
+            record = line.strip().split(',')
+            if record[0] != search_term:
+                updated_lines.append(line)
+            else:
+                deleted = True
+        
+        if not deleted:
+            messagebox.showinfo("Info", f"No matching {record_type.lower()} found")
+            return
+        
+        with open(filename, 'w') as f:
+            f.writelines(updated_lines)
+        
+        messagebox.showinfo("Success", f"{record_type} deleted successfully")
+        self.create_main_menu()
+    
+    def update_record(self, record_type):
+        self.clear_frame()
+        
+        tk.Label(self.root, text=f"Update {record_type}", font=("Arial", 16)).pack(pady=10)
+        
+        if record_type == "Contact":
+            tk.Label(self.root, text="Enter name to update:").pack()
+            self.search_entry = tk.Entry(self.root)
+            self.search_entry.pack(pady=10)
+        else:
+            tk.Label(self.root, text="Enter title to update:").pack()
+            self.search_entry = tk.Entry(self.root)
+            self.search_entry.pack(pady=10)
+        
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Search", command=lambda: self.search_to_update(record_type)).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Cancel", command=self.create_main_menu).pack(side='left', padx=5)
+    
+    def search_to_update(self, record_type):
+        search_term = self.search_entry.get()
+        if not search_term:
+            messagebox.showerror("Error", "Please enter a search term")
+            return
+        
+        filename = self.contacts_file if record_type == "Contact" else self.appointments_file
+        
+        try:
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            messagebox.showerror("Error", f"No {record_type.lower()}s found")
+            return
+        
+        found_record = None
+        for line in lines:
+            record = line.strip().split(',')
+            if record[0] == search_term:
+                found_record = record
+                break
+        
+        if not found_record:
+            messagebox.showinfo("Info", f"No matching {record_type.lower()} found")
+            return
+        
+        self.show_update_form(record_type, found_record)
+    
+    def show_update_form(self, record_type, record):
+        self.clear_frame()
+        
+        tk.Label(self.root, text=f"Update {record_type}", font=("Arial", 16)).pack(pady=10)
+        
+        entry_frame = tk.Frame(self.root)
+        entry_frame.pack(pady=10)
+        
+        if record_type == "Contact":
+            tk.Label(entry_frame, text="Name:").grid(row=0, column=0, sticky='e')
+            self.name_entry = tk.Entry(entry_frame)
+            self.name_entry.grid(row=0, column=1)
+            self.name_entry.insert(0, record[0])
+            
+            tk.Label(entry_frame, text="Address:").grid(row=1, column=0, sticky='e')
+            self.address_entry = tk.Entry(entry_frame)
+            self.address_entry.grid(row=1, column=1)
+            self.address_entry.insert(0, record[1] if len(record) > 1 else "")
+            
+            tk.Label(entry_frame, text="Phone:").grid(row=2, column=0, sticky='e')
+            self.phone_entry = tk.Entry(entry_frame)
+            self.phone_entry.grid(row=2, column=1)
+            self.phone_entry.insert(0, record[2] if len(record) > 2 else "")
+            
+            tk.Label(entry_frame, text="Email:").grid(row=3, column=0, sticky='e')
+            self.email_entry = tk.Entry(entry_frame)
+            self.email_entry.grid(row=3, column=1)
+            self.email_entry.insert(0, record[3] if len(record) > 3 else "")
+        else:
+            tk.Label(entry_frame, text="Title:").grid(row=0, column=0, sticky='e')
+            self.title_entry = tk.Entry(entry_frame)
+            self.title_entry.grid(row=0, column=1)
+            self.title_entry.insert(0, record[0])
+            
+            tk.Label(entry_frame, text="Date (dd/mm/yyyy):").grid(row=1, column=0, sticky='e')
+            self.date_entry = tk.Entry(entry_frame)
+            self.date_entry.grid(row=1, column=1)
+            self.date_entry.insert(0, record[1] if len(record) > 1 else "")
+            
+            tk.Label(entry_frame, text="Time:").grid(row=2, column=0, sticky='e')
+            self.time_entry = tk.Entry(entry_frame)
+            self.time_entry.grid(row=2, column=1)
+            self.time_entry.insert(0, record[2] if len(record) > 2 else "")
+        
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Update", command=lambda: self.save_update(record_type, record[0])).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Cancel", command=self.create_main_menu).pack(side='left', padx=5)
+    
+    def save_update(self, record_type, old_key):
+        filename = self.contacts_file if record_type == "Contact" else self.appointments_file
+        
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+        
+        updated_lines = []
+        updated = False
+        
+        if record_type == "Contact":
+            name = self.name_entry.get()
+            address = self.address_entry.get()
+            phone = self.phone_entry.get()
+            email = self.email_entry.get()
+            
+            if not name or not phone:
+                messagebox.showerror("Error", "Name and phone are required fields")
+                return
+            
+            for line in lines:
+                record = line.strip().split(',')
+                if record[0] == old_key:
+                    updated_lines.append(f"{name},{address},{phone},{email}\n")
+                    updated = True
+                else:
+                    updated_lines.append(line)
+        else:
+            title = self.title_entry.get()
+            date = self.date_entry.get()
+            time = self.time_entry.get()
+            
+            if not title or not date:
+                messagebox.showerror("Error", "Title and date are required fields")
+                return
+            
+            for line in lines:
+                record = line.strip().split(',')
+                if record[0] == old_key:
+                    updated_lines.append(f"{title},{date},{time}\n")
+                    updated = True
+                else:
+                    updated_lines.append(line)
+        
+        if not updated:
+            messagebox.showerror("Error", "Record not found for update")
+            return
+        
+        with open(filename, 'w') as f:
+            f.writelines(updated_lines)
+        
+        messagebox.showinfo("Success", f"{record_type} updated successfully")
+        self.create_main_menu()
+    
+    def search_record(self, record_type):
+        self.clear_frame()
+        
+        tk.Label(self.root, text=f"Search {record_type}", font=("Arial", 16)).pack(pady=10)
+        
+        if record_type == "Contact":
+            tk.Label(self.root, text="Enter name to search:").pack()
+        else:
+            tk.Label(self.root, text="Enter title to search:").pack()
+        
+        self.search_entry = tk.Entry(self.root)
+        self.search_entry.pack(pady=10)
+        
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Search", command=lambda: self.perform_search(record_type)).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Cancel", command=self.create_main_menu).pack(side='left', padx=5)
+        
+        self.results_text = scrolledtext.ScrolledText(self.root, width=70, height=10)
+        self.results_text.pack(pady=10)
+        self.results_text.config(state='disabled')
+    
+    def perform_search(self, record_type):
+        search_term = self.search_entry.get()
+        if not search_term:
+            messagebox.showerror("Error", "Please enter a search term")
+            return
+        
+        filename = self.contacts_file if record_type == "Contact" else self.appointments_file
+        
+        try:
+            with open(filename, 'r') as f:
+                found = False
+                self.results_text.config(state='normal')
+                self.results_text.delete(1.0, tk.END)
+                
+                for line in f:
+                    record = line.strip().split(',')
+                    if record[0].lower() == search_term.lower():
+                        found = True
+                        if record_type == "Contact":
+                            self.results_text.insert(tk.END, f"Name: {record[0]}\n")
+                            self.results_text.insert(tk.END, f"Address: {record[1] if len(record) > 1 else ''}\n")
+                            self.results_text.insert(tk.END, f"Phone: {record[2] if len(record) > 2 else ''}\n")
+                            self.results_text.insert(tk.END, f"Email: {record[3] if len(record) > 3 else ''}\n")
+                        else:
+                            self.results_text.insert(tk.END, f"Title: {record[0]}\n")
+                            self.results_text.insert(tk.END, f"Date: {record[1] if len(record) > 1 else ''}\n")
+                            self.results_text.insert(tk.END, f"Time: {record[2] if len(record) > 2 else ''}\n")
+                        self.results_text.insert(tk.END, "----------------------------\n")
+                
+                if not found:
+                    self.results_text.insert(tk.END, f"No matching {record_type.lower()} found\n")
+                
+                self.results_text.config(state='disabled')
+        except FileNotFoundError:
+            messagebox.showerror("Error", f"No {record_type.lower()}s found")
+    
+    def load_appointments(self, filename):
+        appointments = []
+        try:
+            with open(filename, 'r') as file:
+                for line in file:
+                    title, date, time = line.strip().split(',')
+                    appointments.append({'title': title, 'date': date, 'time': time})
+        except FileNotFoundError:
+            pass
+        return appointments
+    
+    def load_contacts(self, filename):
+        contacts = []
+        try:
+            with open(filename, 'r') as file:
+                for line in file:
+                    name, address, phone, email = line.strip().split(',')
+                    contacts.append({'name': name, 'address': address, 'phone': phone, 'email': email})
+        except FileNotFoundError:
+            pass
+        return contacts
+    
+    def save_sorted(self, source, source_type):
+        if source == "Contacts":
+            with open(self.contacts_file, 'w') as file:
+                for contact in source_type:
+                    file.write(f"{contact['name']},{contact['address']},{contact['phone']},{contact['email']}\n")
+        elif source == "Appointments":
+            with open(self.appointments_file, 'w') as file:
+                for appointment in source_type:
+                    file.write(f"{appointment['title']},{appointment['date']},{appointment['time']}\n")
+    
+    def sort_data(self, source, order, sort_by):
+        if order == "asc":
+            return sorted(source, key=lambda x: x[sort_by].lower())
+        elif order == "desc":
+            return sorted(source, key=lambda x: x[sort_by].lower(), reverse=True)
+        elif order == "rand":
+            return sorted(source, key=lambda x: random.random())
+    
+    def show_sorted(self, source):
+        self.clear_frame()
+        
+        tk.Label(self.root, text=f"List of {source}", font=("Arial", 16)).pack(pady=10)
+        
+        results_text = scrolledtext.ScrolledText(self.root, width=70, height=15)
+        results_text.pack(pady=10)
+        
+        if source == "Contacts":
+            try:
+                with open(self.contacts_file, 'r') as file:
+                    for line in file:
+                        name, address, phone, email = line.strip().split(',')
+                        results_text.insert(tk.END, f"Name: {name}\n")
+                        results_text.insert(tk.END, f"Address: {address}\n")
+                        results_text.insert(tk.END, f"Phone: {phone}\n")
+                        results_text.insert(tk.END, f"Email: {email}\n")
+                        results_text.insert(tk.END, "----------------------------\n")
+            except FileNotFoundError:
+                results_text.insert(tk.END, "No contacts found\n")
+        else:
+            try:
+                with open(self.appointments_file, 'r') as file:
+                    for line in file:
+                        title, date, time = line.strip().split(',')
+                        results_text.insert(tk.END, f"Title: {title}\n")
+                        results_text.insert(tk.END, f"Date: {date}\n")
+                        results_text.insert(tk.END, f"Time: {time}\n")
+                        results_text.insert(tk.END, "----------------------------\n")
+            except FileNotFoundError:
+                results_text.insert(tk.END, "No appointments found\n")
+        
+        results_text.config(state='disabled')
+        
+        tk.Button(self.root, text="Back to Main Menu", command=self.create_main_menu).pack(pady=20)
+    
+    def sorting_algorithm(self, source, order, sort_by):
+        if source == "Contacts":
+            contacts = self.load_contacts(self.contacts_file)
+            if not contacts:
+                messagebox.showerror("Error", "No contacts found to sort")
+                return
+            
+            sorted_source = self.sort_data(contacts, order, sort_by)
+            self.save_sorted("Contacts", sorted_source)
+            self.show_sorted("Contacts")
+        elif source == "Appointments":
+            appointments = self.load_appointments(self.appointments_file)
+            if not appointments:
+                messagebox.showerror("Error", "No appointments found to sort")
+                return
+            
+            sorted_source = self.sort_data(appointments, order, sort_by)
+            self.save_sorted("Appointments", sorted_source)
+            self.show_sorted("Appointments")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SmartPersonalAssistantGUI(root)
+    root.mainloop()
